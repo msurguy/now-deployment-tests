@@ -1,68 +1,29 @@
-name: Postgres Service Example
-
-on:
-  push:
-    branches:
-    - master
-  pull_request:
-    branches:
-    - master
-
+on: [push]
+name: Deploy on Now
 jobs:
-  container-job:
+  deploy:
     runs-on: ubuntu-latest
-    
-    container:
-      image:  node:10.16-jessie
-
-    services:
-      postgres:
-        image: postgres:10.8
-        env:
-          POSTGRES_USER: postgres
-          POSTGRES_PASSWORD: postgres
-          POSTGRES_DB: postgres
-        ports:
-        - 5432:5432
-        # needed because the postgres container does not provide a healthcheck
-        options: --health-cmd pg_isready --health-interval 10s --health-timeout 5s --health-retries 5
-
     steps:
-    - uses: actions/checkout@v1     
-    - run: npm ci
-      working-directory: ./postgres
-    - run: node client.js
-      working-directory: ./postgres
+    - uses: actions/checkout@master
+    - name: deploy
+      uses: actions/zeit-now@master
       env:
-        # use postgres for the host here because we have specified a contaienr for the job.
-        # If we were running the job on the VM this would be localhost
-        POSTGRES_HOST: postgres
-        POSTGRES_PORT: ${{ job.services.postgres.ports[5432] }}
-
-  vm-job:
-    runs-on: ubuntu-latest
-
-    services:
-      postgres:
-        image: postgres:10.8
-        env:
-          POSTGRES_USER: postgres
-          POSTGRES_PASSWORD: postgres
-          POSTGRES_DB: postgres
-        ports:
-        # will assign a random free host port
-        - 5432/tcp
-        # needed because the postgres container does not provide a healthcheck
-        options: --health-cmd pg_isready --health-interval 10s --health-timeout 5s --health-retries 5
-
-    steps:
-    - uses: actions/checkout@v1     
-    - run: npm ci
-      working-directory: ./postgres
-    - run: node client.js
-      working-directory: ./postgres
+        ZEIT_TOKEN: ${{ secrets.ZEIT_TOKEN }}
+      with:
+        args: --public --no-clipboard deploy ./site > $HOME/${{ github.action }}.txt
+    - name: alias
+      uses: actions/zeit-now@master
       env:
-        # use postgres for the host here because we have specified a contaienr for the job.
-        # If we were running the job on the VM this would be localhost
-        POSTGRES_HOST: localhost
-        POSTGRES_PORT: ${{ job.services.postgres.ports[5432] }} # get randomly assigned published port
+        ZEIT_TOKEN: ${{ secrets.ZEIT_TOKEN }}
+      with:
+        args: alias `cat /github/home/deploy.txt` ${{ github.sha }}
+    - name: master-branch-filter
+      uses: actions/bin/filter@master
+      with:
+        args: branch master
+    - name: release
+      uses: actions/zeit-now@master
+      env:
+        ZEIT_TOKEN: ${{ secrets.ZEIT_TOKEN }}
+      with:
+        args: alias --local-config=./site/now.json
