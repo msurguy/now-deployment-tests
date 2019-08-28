@@ -16,7 +16,7 @@ jobs:
       env:
         ZEIT_TOKEN: ${{ secrets.ZEIT_TOKEN }}
       with:
-        args: alias `cat /github/home/deploy.txt` ${{ github.sha }}
+        args: alias `cat $HOME/deploy.txt`
     - name: master-branch-filter
       uses: actions/bin/filter@master
       with:
