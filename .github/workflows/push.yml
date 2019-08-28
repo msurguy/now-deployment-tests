@@ -5,18 +5,6 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@master
-    - name: deploy
-      uses: actions/zeit-now@master
-      env:
-        ZEIT_TOKEN: ${{ secrets.ZEIT_TOKEN }}
-      with:
-        args: --public --no-clipboard deploy ./site > $HOME/${{ github.action }}.txt
-    - name: alias
-      uses: actions/zeit-now@master
-      env:
-        ZEIT_TOKEN: ${{ secrets.ZEIT_TOKEN }}
-      with:
-        args: alias `cat $HOME/deploy.txt`
     - name: master-branch-filter
       uses: actions/bin/filter@master
       with:
